@@ -1,9 +1,9 @@
 spring:
   datasource:
     driverClassName: com.mysql.jdbc.Driver
-    url: jdbc:mysql://roundhouse.proxy.rlwy.net:40884/railway
+    url: jdbc:mysql://roundhouse.proxy.rlwy.net:18333/railway
     username: root
-    password: d11Dag5Ce1b3Eg6G42F4EaEFCAGd11hD
+    password: HHfaDGgHh1BaBFh-Gdd5hc5Ed54d62Dg
   jpa:
     hibernate.ddl-auto: update
     generate-ddl: true
