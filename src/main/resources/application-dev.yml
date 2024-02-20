@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    driverClassName: com.mysql.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/bossBouncer
+    username: root
+    password: Arya@123
+  jpa:
+    hibernate.ddl-auto: update
+    generate-ddl: true
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  mail:
+    host: sandbox.smtp.mailtrap.io
+    post: 2525
+    username: 4f2ecc726bd012
+    password: 560394bdd10eb1
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enables: true
