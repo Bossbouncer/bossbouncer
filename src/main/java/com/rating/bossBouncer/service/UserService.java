@@ -59,7 +59,7 @@ public class UserService {
 
     private void sendPasswordResetEmail(String toEmail, String resetToken) {
         String to=toEmail;
-        String from="noreply@bossbouncer.com";
+        String from="chiefbouncer@bossbouncer.io";
         String subject= "Boss Bouncer: Password Reset Request";
         String htmlBody = "<!DOCTYPE html>\n" +
                 "<html lang=\"en\">\n" +
@@ -79,6 +79,17 @@ public class UserService {
                 "</html>";
 
         emailService.sendEmail(to, from, subject,htmlBody);
+    }
+
+    public void verifyEmail(String email, String verificationCode) {
+        User user = userRepository.findByEmail(email);
+        if (user != null && verificationCode.equals(user.getEmailVerificationCode())) {
+            // mark the user as verified
+            user.setEmailVerified(true);
+            userRepository.save(user);
+        } else {
+            throw new IllegalArgumentException("Invalid verification code");
+        }
     }
 }
 
