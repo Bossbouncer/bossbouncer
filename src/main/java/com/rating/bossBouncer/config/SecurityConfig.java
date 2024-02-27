@@ -110,7 +110,7 @@ public class SecurityConfig {
                         "/*/*.jpg",
                         "/*/*.html",
                         "/*/*.css",
-                        "/*/*.js", "/auth/*", "/oauth2/*","/api/forgot-password/*").permitAll()
+                        "/*/*.js", "/auth/*", "/oauth2/*","/api/forgot-password/*","/user/verify").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .oauth2Login()

@@ -33,6 +33,12 @@ public class User {
     @Column(nullable = false)
     private Boolean emailVerified = false;
 
+    @Column(name = "email_verification_code")
+    private String emailVerificationCode;
+
+    @Column(name = "email_verification_code_expiration")
+    private LocalDateTime emailVerificationCodeExpiration;
+
     @JsonIgnore
     private String password;
 
