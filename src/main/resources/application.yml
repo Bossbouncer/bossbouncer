@@ -5,7 +5,7 @@ spring:
     driverClassName: com.mysql.jdbc.Driver
     url: jdbc:mysql://localhost:3306/bossBouncer
     username: root
-    password: Arya@123
+    password: ENC(0HZdtUIoTJof4RqWyvjd5UNN/dO3xVvH)
   jpa:
     hibernate.ddl-auto: update
     generate-ddl: true
@@ -17,7 +17,7 @@ spring:
     host: smtp.office365.com
     port: 587
     username: chiefbouncer@bossbouncer.io
-    password: AsdLkjQazPlm10&
+    password: ENC(BfFwPJ+IFhwf8plHuqoAug4+XsMeEiqu)
     properties:
       mail:
         smtp:
@@ -69,3 +69,8 @@ app:
       - http://localhost:3000/oauth2/redirect
       - myandroidapp://oauth2/redirect
       - myiosapp://oauth2/redirect
+jasypt:
+  encryptor:
+    password: ${encryptionKey:encryptionKey}
+    algorithm: PBEWithMD5AndDES
+    iv-generator-classname: org.jasypt.iv.NoIvGenerator
