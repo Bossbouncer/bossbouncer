@@ -14,16 +14,16 @@ spring:
       hibernate:
         format_sql: true
   mail:
-    host: sandbox.smtp.mailtrap.io
-    post: 2525
-    username: 4f2ecc726bd012
-    password: 560394bdd10eb1
+    host: smtp.office365.com
+    port: 587
+    username: chiefbouncer@bossbouncer.io
+    password: AsdLkjQazPlm10&
     properties:
       mail:
         smtp:
           auth: true
           starttls:
-            enables: true
+            enable: true
   security:
     oauth2:
       client:
