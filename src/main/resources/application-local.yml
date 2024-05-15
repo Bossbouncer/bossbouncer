@@ -1,9 +1,9 @@
 spring:
   datasource:
     driverClassName: com.mysql.jdbc.Driver
-    url: jdbc:mysql://monorail.proxy.rlwy.net:23626/railway
+    url: jdbc:mysql://localhost:3306/bossBouncer
     username: root
-    password: ENC(M5dQuNz8tIYmu1sQ8NzKAysa8IgyXPdm8iKzVM+52gBDITUvkYRF535Iyw/Sw4na)
+    password: ENC(0HZdtUIoTJof4RqWyvjd5UNN/dO3xVvH)
   jpa:
     hibernate.ddl-auto: update
     generate-ddl: true

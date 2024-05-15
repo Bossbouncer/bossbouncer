@@ -8,6 +8,7 @@ import com.rating.bossBouncer.security.TokenProvider;
 import com.rating.bossBouncer.service.EmailService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -41,6 +42,9 @@ public class AuthController {
 
     @Autowired
     private EmailService emailService;
+
+    @Value("${app.reactDomain}")
+    private String reactDomain;
 
     @PostMapping("/login")
     public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
@@ -112,7 +116,7 @@ public class AuthController {
                 "<h2>Registration Successful!</h2>\n" +
                 "<p>Dear " + userName + ",</p>\n" +
                 "<p>Congratulations! You have successfully registered on Boss Bouncer.Please click the link below to verify your email address\n" +
-                "<p style=\"text-align: center;\"><a href=\"https://www.bossbouncer.com/verifyUser?email="+to+ "&code=" + result.getEmailVerificationCode()+ "\" class=\"button\">Visit Boss Bouncer</a></p>\n" +
+                "<p style=\"text-align: center;\"><a href=\""+reactDomain+"/verifyUser?email="+to+ "&code=" + result.getEmailVerificationCode()+ "\" class=\"button\">Visit Boss Bouncer</a></p>\n" +
                 "<p>This link will expire on " + result.getEmailVerificationCodeExpiration().toString() + "</p>.\n" +
                 "<p>If you did not register on our website, please ignore this email.</p>\n" +
                 "<p>Best regards,<br> Boss Bouncer</p>\n" +

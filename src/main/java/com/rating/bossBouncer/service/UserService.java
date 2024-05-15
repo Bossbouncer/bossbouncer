@@ -4,6 +4,7 @@ import com.rating.bossBouncer.entity.User;
 import com.rating.bossBouncer.exceptions.BadRequestException;
 import com.rating.bossBouncer.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +27,9 @@ public class UserService {
 
     @Autowired
     private EmailService emailService;
+
+    @Value("${app.reactDomain}")
+    private String reactDomain;
 
     public void generatePasswordResetToken(String email) {
         User user = userRepository.findByEmail(email);
@@ -58,7 +62,6 @@ public class UserService {
     }
 
     private void sendPasswordResetEmail(String toEmail, String resetToken) {
-        String to=toEmail;
         String from="chiefbouncer@bossbouncer.io";
         String subject= "Boss Bouncer: Password Reset Request";
         String htmlBody = "<!DOCTYPE html>\n" +
@@ -70,7 +73,7 @@ public class UserService {
                 "<p>Dear User,</p>\n" +
                 "<p>We received a request to reset your password. If you did not make this request, please ignore this email.</p>\n" +
                 "<p>To reset your password, click the following link:</p>\n" +
-                "<p><a href=\"https://www.bossbouncer.com/reset-password?token=" + resetToken + "\">Reset Password</a></p>\n" +
+                "<p><a href=\""+reactDomain+"/reset-password?token=" + resetToken + "\">Reset Password</a></p>\n" +
                 "<p>This link will expire in 24 hours for security reasons.</p>\n" +
                 "<p>If you have any questions or need assistance, please contact our support team.</p>\n" +
                 "<p>Best regards,<br> Boss Bouncer</p>\n" +
@@ -78,7 +81,7 @@ public class UserService {
                 "</body>\n" +
                 "</html>";
 
-        emailService.sendEmail(to, from, subject,htmlBody);
+        emailService.sendEmail(toEmail, from, subject,htmlBody);
     }
 
     public void verifyEmail(String email, String verificationCode) {
