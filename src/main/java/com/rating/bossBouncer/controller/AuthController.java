@@ -66,9 +66,9 @@ public class AuthController {
             throw new IllegalArgumentException("Email not verified");
         }
 
-        if (user.getEmailVerificationCodeExpiration() != null && LocalDateTime.now().isAfter(user.getEmailVerificationCodeExpiration())) {
+/*        if (user.getEmailVerificationCodeExpiration() != null && LocalDateTime.now().isAfter(user.getEmailVerificationCodeExpiration())) {
             throw new IllegalArgumentException("Verification link has expired");
-        }
+        }*/
         String token = tokenProvider.createToken(authentication);
         return ResponseEntity.ok(new AuthResponse(token, user));
     }
