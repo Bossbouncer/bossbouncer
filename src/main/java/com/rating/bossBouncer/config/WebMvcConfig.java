@@ -1,4 +1,4 @@
-package com.rating.bossBouncer.config;
+package com.rating.bossbouncer.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;

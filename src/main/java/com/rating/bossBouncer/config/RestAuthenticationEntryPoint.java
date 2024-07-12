@@ -1,4 +1,4 @@
-package com.rating.bossbouncer.security;
+package com.rating.bossbouncer.config;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

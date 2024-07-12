@@ -1,47 +1,43 @@
-package com.rating.bossBouncer.security;
+package com.rating.bossbouncer.service;
 
-import com.rating.bossBouncer.config.AppProperties;
+import com.rating.bossbouncer.security.AppProperties;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
 
 @Service
-public class TokenProvider {
+public class JwtService {
 
-    private static final Logger logger = LoggerFactory.getLogger(TokenProvider.class);
+    private static final Logger logger = LoggerFactory.getLogger(JwtService.class);
 
+    @Autowired
     private AppProperties appProperties;
 
-    public TokenProvider(AppProperties appProperties) {
-        this.appProperties = appProperties;
-    }
-
-    public String createToken(Authentication authentication) {
-        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+    public String generateToken(String email) {
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + appProperties.getAuth().getTokenExpirationMsec());
 
         return Jwts.builder()
-                .setSubject(Long.toString(userPrincipal.getId()))
+                .setSubject(email)
                 .setIssuedAt(new Date())
                 .setExpiration(expiryDate)
                 .signWith(Keys.hmacShaKeyFor(Decoders.BASE64.decode(appProperties.getAuth().getTokenSecret())),SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    public Long getUserIdFromToken(String token) {
+    public String extractEmail(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(Keys.hmacShaKeyFor(Decoders.BASE64.decode(appProperties.getAuth().getTokenSecret()))).build()
                 .parseClaimsJws(token)
                 .getBody();
 
-        return Long.parseLong(claims.getSubject());
+        return claims.getSubject();
     }
 
     public boolean validateToken(String authToken) {
@@ -61,5 +57,5 @@ public class TokenProvider {
         }
         return false;
     }
-
 }
+
