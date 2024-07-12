@@ -1,37 +1,50 @@
-CREATE TABLE users (
-    UserID BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    imageUrl VARCHAR(255),
-    emailVerified BOOLEAN NOT NULL DEFAULT false,
-    password VARCHAR(255),
-    provider VARCHAR(50) NOT NULL,
-    providerId VARCHAR(255)
-);
 CREATE TABLE boss (
-    BossID BIGINT PRIMARY KEY AUTO_INCREMENT,
-    First_Name VARCHAR(255),
+    BossID BIGINT AUTO_INCREMENT PRIMARY KEY,
+    First_Name VARCHAR(255) NOT NULL,
     Last_Name VARCHAR(255),
-    Email_Id VARCHAR(255),
-    Title VARCHAR(255),
-    Company VARCHAR(255),
-    Department VARCHAR(255)
-);
-
-CREATE TABLE rating (
-    RatingID BIGINT PRIMARY KEY AUTO_INCREMENT,
-    UserID BIGINT,
-    BossID BIGINT,
-    Rating VARCHAR(50),
-    Timestamp DATETIME,
-    CONSTRAINT fk_user FOREIGN KEY (UserID) REFERENCES users (UserID),
-    CONSTRAINT fk_boss FOREIGN KEY (BossID) REFERENCES boss (BossID)
+    Email VARCHAR(255) NOT NULL UNIQUE,
+    Title VARCHAR(255) NOT NULL,
+    Organization VARCHAR(255) NOT NULL,
+    Department VARCHAR(255),
+    isVerified BOOLEAN NOT NULL DEFAULT false,
+    createdAt TIMESTAMP NOT NULL,
+    updatedAt TIMESTAMP NOT NULL,
+    createdBy VARCHAR(255),
+    updatedBy VARCHAR(255)
 );
 
 CREATE TABLE payment (
-    PaymentID BIGINT PRIMARY KEY AUTO_INCREMENT,
+    PaymentID BIGINT AUTO_INCREMENT PRIMARY KEY,
     UserID BIGINT,
-    Amount DECIMAL(10, 2),
-    Timestamp DATETIME,
-    CONSTRAINT fk_user FOREIGN KEY (UserID) REFERENCES users (UserID)
+    Amount DECIMAL(19, 2),
+    Timestamp TIMESTAMP,
+    createdAt TIMESTAMP NOT NULL,
+    updatedAt TIMESTAMP NOT NULL,
+    createdBy VARCHAR(255),
+    updatedBy VARCHAR(255),
+    FOREIGN KEY (UserID) REFERENCES users(UserID)
+);
+CREATE TABLE rating (
+    RatingID BIGINT AUTO_INCREMENT PRIMARY KEY,
+    UserID BIGINT,
+    BossID BIGINT,
+    Rating VARCHAR(255),
+    Status VARCHAR(255),
+    createdAt TIMESTAMP NOT NULL,
+    updatedAt TIMESTAMP NOT NULL,
+    createdBy VARCHAR(255),
+    updatedBy VARCHAR(255),
+    FOREIGN KEY (UserID) REFERENCES users(UserID),
+    FOREIGN KEY (BossID) REFERENCES boss(BossID)
+);
+CREATE TABLE users (
+    UserID BIGINT AUTO_INCREMENT PRIMARY KEY,
+    First_Name VARCHAR(255) NOT NULL,
+    Last_Name VARCHAR(255),
+    Email VARCHAR(255) NOT NULL UNIQUE,
+    isVerified BOOLEAN NOT NULL DEFAULT false,
+    createdAt TIMESTAMP NOT NULL,
+    updatedAt TIMESTAMP NOT NULL,
+    createdBy VARCHAR(255),
+    updatedBy VARCHAR(255)
 );
