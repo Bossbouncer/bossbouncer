@@ -1,140 +1,190 @@
-package com.rating.bossBouncer.service;
+package com.rating.bossbouncer.service;
 
-import com.rating.bossBouncer.bean.RatingSubmissionDTO;
-import com.rating.bossBouncer.entity.Boss;
-import com.rating.bossBouncer.entity.Rating;
-import com.rating.bossBouncer.entity.User;
-import com.rating.bossBouncer.exceptions.UserNotFoundException;
-import com.rating.bossBouncer.repository.BossRepository;
-import com.rating.bossBouncer.repository.RatingRepository;
-import com.rating.bossBouncer.repository.UserRepository;
-import com.rating.bossBouncer.utility.RatingEnum;
+import com.rating.bossbouncer.bean.*;
+import com.rating.bossbouncer.entity.Boss;
+import com.rating.bossbouncer.entity.Rating;
+import com.rating.bossbouncer.entity.User;
+import com.rating.bossbouncer.repository.BossRepository;
+import com.rating.bossbouncer.repository.RatingRepository;
+import com.rating.bossbouncer.repository.UserRepository;
+import com.rating.bossbouncer.utility.EmailUtil;
+import com.rating.bossbouncer.utility.RatingStatus;
+import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessException;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class RatingService {
-    private final RatingRepository ratingRepository;
-    private final UserRepository userRepository;
-    private final BossRepository bossRepository;
-
     @Autowired
-    public RatingService(RatingRepository ratingRepository, UserRepository userRepository, BossRepository bossRepository) {
-        this.ratingRepository = ratingRepository;
-        this.userRepository = userRepository;
-        this.bossRepository = bossRepository;
-    }
+    private RatingRepository ratingRepository;
+    @Autowired
+    private BossRepository bossRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private OtpService otpService;
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private EmailUtil emailUtil;
 
-    public double getAverageBossRatingInCompany(String company) {
-        List<Boss> bosses = bossRepository.findByCompany(company);
-        List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
-        double averageRating = ratingRepository.getAverageRatingByBossIdIn(bossIds);
-        return averageRating;
-    }
-    public List<Rating> getAllBossRatingsInCompany(String company) {
-        List<Boss> bosses = bossRepository.findByCompany(company);
-        List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
-        return ratingRepository.findByBossIdIn(bossIds);
-    }
-
-/*    @Transactional
-    public Rating submitRating(RatingSubmissionDTO ratingSubmission) {
-        User user = userRepository.findById(ratingSubmission.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
-
-        Boss boss;
-
-        // Check if the boss exists based on the provided bossId
-        Optional<Boss> existingBoss = bossRepository.findById(ratingSubmission.getBossId());
-
-        if (existingBoss.isPresent()) {
-            boss = existingBoss.get();
+    public ResponseEntity<String> submitRating(RatingRequest ratingrequest) throws MessagingException {
+        UserRequest userRequest= ratingrequest.getUser();
+        BossRequest bossRequest= ratingrequest.getBoss();
+        // Find or save the user
+        User existingUser = userRepository.findByEmail(userRequest.getEmail());
+        User user= new User();
+        if (existingUser == null) {
+            user.setFirstName(userRequest.getFirstName());
+            user.setLastName(userRequest.getLastName());
+            user.setEmail(userRequest.getEmail());
+            user.setIsVerified(false);
+            user.setCreatedBy(userRequest.getEmail());
+            user.setUpdatedBy(userRequest.getEmail());
+            userRepository.save(user);
         } else {
-            // Create a new Boss entity if the boss is not already registered
-            boss = new Boss();
-            boss.setFirstName(ratingSubmission.getBossFirstName());
-            boss.setLastName(ratingSubmission.getBossLastName());
-            boss.setEmailId(ratingSubmission.getBossEmail());
-            boss.setTitle(ratingSubmission.getBossTitle());
-            boss.setCompany(ratingSubmission.getBossCompany());
-            boss.setDepartment(ratingSubmission.getBossDepartment());
-            boss = bossRepository.save(boss);
+            user = existingUser;
         }
 
-        // Get the current timestamp
-        LocalDateTime timestamp = LocalDateTime.now();
-
-        // Create a new Rating entity
-        Rating ratingEntry = new Rating();
-        ratingEntry.setUser(user);
-        ratingEntry.setBoss(boss);
-        ratingEntry.setRating(ratingSubmission.getRating());
-        ratingEntry.setTimestamp(timestamp);
-
-        // Save the new rating entry using the rating repository
-        return ratingRepository.save(ratingEntry);
-    }*/
-@Transactional
-    public Rating submitRating(RatingSubmissionDTO ratingSubmission) {
-        try {
-            User user = userRepository.findById(ratingSubmission.getUserId())
-                    .orElseThrow(() -> new UserNotFoundException("User not found"));
-
-            // Find the boss based on unique identifier (e.g., email)
-            Optional<Boss> existingBoss = bossRepository.findByEmailId(ratingSubmission.getBossEmail());
-
-            Boss boss = existingBoss.orElseGet(() -> {
-                // If the boss with the given email does not exist, create a new Boss entity
-                Boss newBoss = new Boss();
-                newBoss.setFirstName(ratingSubmission.getBossFirstName());
-                newBoss.setLastName(ratingSubmission.getBossLastName());
-                newBoss.setEmailId(ratingSubmission.getBossEmail());
-                newBoss.setTitle(ratingSubmission.getBossTitle());
-                newBoss.setCompany(ratingSubmission.getBossCompany());
-                newBoss.setDepartment(ratingSubmission.getBossDepartment());
-                return bossRepository.save(newBoss);
-            });
-
-            // Check if the user has already submitted a rating for this boss
-            Rating existingRating = ratingRepository.findByUserAndBoss(user, boss);
-
-            // If the user has already submitted a rating, update the existing rating
-            if (existingRating != null) {
-                existingRating.setRating(ratingSubmission.getRating());
-                existingRating.setTimestamp(LocalDateTime.now());
-                return ratingRepository.save(existingRating);
-            }
-
-            // If the user has not submitted a rating, create a new Rating entity
-            Rating ratingEntry = new Rating();
-            ratingEntry.setUser(user);
-            ratingEntry.setBoss(boss);
-            ratingEntry.setRating(ratingSubmission.getRating());
-            ratingEntry.setTimestamp(LocalDateTime.now());
-
-            // Save the new rating entry using the rating repository
-            return ratingRepository.save(ratingEntry);
-        } catch (IllegalArgumentException ex) {
-            // Handle the case when the boss or user is not found
-            throw new IllegalArgumentException("Invalid user or boss details.");
-        } catch (DataAccessException ex) {
-            // Handle data access exceptions (database errors)
-            throw new RuntimeException("Error accessing the database.");
+        // Find or save the boss
+        Boss existingBoss = bossRepository.findByEmail(bossRequest.getEmail());
+        Boss boss= new Boss();
+        if (existingBoss == null) {
+            boss.setEmail(bossRequest.getEmail());
+            boss.setFirstName(bossRequest.getFirstName());
+            boss.setOrganization(bossRequest.getOrganization());
+            boss.setLastName(bossRequest.getLastName());
+            boss.setDepartment(bossRequest.getDepartment());
+            boss.setTitle(bossRequest.getTitle());
+            boss.setCreatedBy(user.getEmail());
+            boss.setUpdatedBy(user.getEmail());
+            bossRepository.save(boss);
+        } else {
+            boss = existingBoss;
         }
+
+        // Check if the user has already rated this boss
+        Rating existingRating = ratingRepository.findByUserAndBoss(user, boss);
+        if (existingRating != null && existingRating.getStatus() == RatingStatus.VERIFIED) {
+            return ResponseEntity.badRequest().body("You have already rated this boss. Please check your dashboard.");
+        }
+        if (existingRating != null && existingRating.getStatus() == RatingStatus.PENDING) {
+            otpService.generateOtp(user.getEmail());
+            return ResponseEntity.badRequest().body("You have already rated this boss. OTP sent please verify.Rating ID: " + existingRating.getId());
+        }
+
+        // Create a new rating
+        Rating rating = new Rating();
+        rating.setUser(user);
+        rating.setBoss(boss);
+        rating.setRating(ratingrequest.getRating());
+        rating.setStatus(RatingStatus.PENDING);
+        rating.setCreatedBy(user.getEmail());
+        rating.setUpdatedBy(user.getEmail());
+        ratingRepository.save(rating);
+        String otp=otpService.generateOtp(user.getEmail());
+        emailUtil.sendOtpToConfirmRating(user, otp);
+        return ResponseEntity.ok("Rating submitted successfully. Rating ID: " + rating.getId());
     }
 
-    public Rating getExistingRatingForUser(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+    public ResponseEntity<?> verifyRating(Long ratingId, String email, String otp) {
 
-        return ratingRepository.findByUser(user);
+        // Validate the OTP
+        if (!otpService.validateOtp(email, otp)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid OTP.");
+        }
+
+        // Retrieve the rating
+        Rating rating = ratingRepository.findById(ratingId).orElse(null);
+        if (rating == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rating not found.");
+        }
+        User user = rating.getUser();
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("User not found for the rating.");
+        }
+
+        // Validate if the user trying to verify is the same user who created the rating
+        if (!user.getEmail().equals(email)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You cannot verify another user's rating.");
+        }
+
+        //Validate if rating already verified
+        if(rating.getStatus().equals(RatingStatus.VERIFIED)){
+            return ResponseEntity.status(HttpStatus.OK).body("Rating already verified.");
+        }
+
+        // Update the rating status to VERIFIED and save
+        rating.setStatus(RatingStatus.VERIFIED);
+        rating.getUser().setIsVerified(true);
+        ratingRepository.save(rating);
+
+        String accessToken = jwtService.generateToken(email);
+        return ResponseEntity.ok(new JwtResponse(accessToken,"Rating Verified."));
+        //return ResponseEntity.status(HttpStatus.OK).body("Rating Verified.");
+    }
+
+    public ResponseEntity<?> getUserRatings(String email) {
+        // Retrieve the user by email
+        User user = userRepository.findByEmail(email);
+
+        // Check if the user exists
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
+        }
+        if (!user.getIsVerified()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not verified.");
+        }
+
+        // Retrieve verified ratings by user
+        List<Rating> ratings = ratingRepository.findByUserAndStatus(user, RatingStatus.VERIFIED);
+
+        return ResponseEntity.status(HttpStatus.OK).body(ratings);
+    }
+
+    public ResponseEntity<?> getAverageBossRatingInCompany(String organization) {
+        List<Boss> bosses = bossRepository.findByOrganization(organization);
+        if(bosses.isEmpty()){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No Organization found with the given name: "+organization);
+        }
+        List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
+        List<BossAverageRating> averageBossrating= ratingRepository.getAverageRatingByBossIdIn(bossIds);
+        return ResponseEntity.status(HttpStatus.OK).body(averageBossrating);
+    }
+
+    public ResponseEntity<?> getAllBossRatingsInCompany(String organization) {
+        List<Boss> bosses = bossRepository.findByOrganization(organization);
+        if (bosses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No organization found with the given name: " + organization);
+        }
+
+        List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
+        List<Rating> ratings = ratingRepository.findByBossIdIn(bossIds);
+
+        Map<Long, List<String>> bossRatingsMap = ratings.stream()
+                .collect(Collectors.groupingBy(
+                        rating -> rating.getBoss().getId(),
+                        Collectors.mapping(rating -> rating.getRating().name(), Collectors.toList())
+                ));
+
+        List<BossRatingsDTO> bossRatingsDTOs = bosses.stream()
+                .map(boss -> new BossRatingsDTO(
+                        boss.getId(),
+                        boss.getFirstName(),
+                        bossRatingsMap.getOrDefault(boss.getId(), Collections.emptyList())
+                ))
+                .collect(Collectors.toList());
+
+        return ResponseEntity.status(HttpStatus.OK).body(bossRatingsDTOs);
     }
 }
-

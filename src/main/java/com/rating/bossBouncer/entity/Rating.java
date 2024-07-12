@@ -1,15 +1,14 @@
-package com.rating.bossBouncer.entity;
+package com.rating.bossbouncer.entity;
 
-import com.rating.bossBouncer.utility.RatingEnum;
+import com.rating.bossbouncer.utility.RatingEnum;
+import com.rating.bossbouncer.utility.RatingStatus;
 import jakarta.persistence.*;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "rating")
 @Data
-public class Rating {
+public class Rating extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "RatingID")
@@ -27,7 +26,8 @@ public class Rating {
     @Column(name = "Rating")
     private RatingEnum rating;
 
-    @Column(name = "Timestamp")
-    private LocalDateTime timestamp;
+    @Enumerated(EnumType.STRING)
+    @Column(name= "status")
+    private RatingStatus status;
 }
 

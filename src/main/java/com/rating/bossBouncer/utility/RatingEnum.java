@@ -1,4 +1,4 @@
-package com.rating.bossBouncer.utility;
+package com.rating.bossbouncer.utility;
 
 public enum RatingEnum {
     UP,

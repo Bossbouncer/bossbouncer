@@ -1,47 +1,43 @@
-package com.rating.bossBouncer.controller;
+package com.rating.bossbouncer.controller;
 
-import com.rating.bossBouncer.bean.RatingSubmissionDTO;
-import com.rating.bossBouncer.entity.Boss;
-import com.rating.bossBouncer.entity.Rating;
-import com.rating.bossBouncer.service.RatingService;
+import com.rating.bossbouncer.bean.RatingRequest;
+import com.rating.bossbouncer.service.RatingService;
+import jakarta.mail.MessagingException;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @RestController
-@RequestMapping("/api/ratings")
+@RequestMapping("/api/ratings/")
 public class RatingController {
-    private final RatingService ratingService;
-
     @Autowired
-    public RatingController(RatingService ratingService) {
-        this.ratingService = ratingService;
+    private RatingService ratingService;
+
+    @PostMapping("/submitRating")
+    public ResponseEntity<?> submitRating(@Valid @RequestBody RatingRequest ratingRequest) throws MessagingException {
+        return ratingService.submitRating(ratingRequest);
     }
 
-/*    @PostMapping
-    public ResponseEntity<String> saveRating(@RequestBody RatingSubmissionDTO ratingDTO) {
-        ratingService.saveRating(ratingDTO);
-        return ResponseEntity.ok("Rating saved successfully");
-    }*/
-
-    @PostMapping
-    public ResponseEntity<Rating> submitRating(@RequestBody RatingSubmissionDTO ratingSubmission) {
-        Rating rating = ratingService.submitRating(ratingSubmission);
-        return ResponseEntity.ok(rating);
+    @PostMapping("/verifyRating")
+    public ResponseEntity<?> verifyRating(@Valid @RequestParam Long ratingId, @RequestParam String email, @RequestParam String otp) {
+        return ratingService.verifyRating(ratingId, email, otp);
     }
 
-    @GetMapping("/company/{company}/average-rating")
-    public ResponseEntity<Double> getAverageBossRatingInCompany(@PathVariable("company") String company) {
-        double averageRating = ratingService.getAverageBossRatingInCompany(company);
-        return ResponseEntity.ok(averageRating);
+    @PostMapping("/getRating")
+    public ResponseEntity<?> getUserRatings(@RequestParam String email) {
+        return ratingService.getUserRatings(email);
+
     }
 
-    @GetMapping("/company/{company}/all-ratings")
-    public ResponseEntity<List<Rating>> getAllBossRatingsInCompany(@PathVariable("company") String company) {
-        List<Rating> ratings = ratingService.getAllBossRatingsInCompany(company);
-        return ResponseEntity.ok(ratings);
+
+    @GetMapping("/averageRatings")
+    public ResponseEntity<?> getAverageBossRatingInCompany(@RequestParam("organization") String organization) {
+        return ratingService.getAverageBossRatingInCompany(organization);
+    }
+
+    @GetMapping("/allRatings")
+    public ResponseEntity<?> getAllBossRatingsInCompany(@RequestParam("organization") String organization) {
+        return ratingService.getAllBossRatingsInCompany(organization);
     }
 }

@@ -1,4 +1,4 @@
-package com.rating.bossBouncer.bean;
+package com.rating.bossbouncer.bean;
 
 import lombok.Data;
 
