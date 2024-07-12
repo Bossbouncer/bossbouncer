@@ -1,6 +1,6 @@
-package com.rating.bossBouncer.bean;
+package com.rating.bossbouncer.bean;
 
-import com.rating.bossBouncer.entity.User;
+import com.rating.bossbouncer.entity.User;
 import lombok.Data;
 
 @Data

@@ -1,4 +1,4 @@
-package com.rating.bossBouncer.entity;
+package com.rating.bossbouncer.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
