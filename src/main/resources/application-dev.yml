@@ -5,7 +5,7 @@ spring:
     username: root
     password: ENC(M5dQuNz8tIYmu1sQ8NzKAysa8IgyXPdm8iKzVM+52gBDITUvkYRF535Iyw/Sw4na)
   jpa:
-    hibernate.ddl-auto: update
+    hibernate.ddl-auto: create-drop
     generate-ddl: true
     show-sql: true
     properties:
