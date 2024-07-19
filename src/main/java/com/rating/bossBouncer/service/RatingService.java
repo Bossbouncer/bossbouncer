@@ -94,7 +94,7 @@ public class RatingService {
         ratingRepository.save(rating);
         String otp=otpService.generateOtp(user.getEmail());
         emailUtil.sendOtpToConfirmRating(user, otp);
-        return ResponseEntity.ok("Rating submitted successfully. Rating ID: " + rating.getId());
+        return ResponseEntity.ok("Rating submitted successfully.OTP sent for Verification. Rating ID: " + rating.getId());
     }
 
     public ResponseEntity<?> verifyRating(Long ratingId, String email, String otp) {
@@ -186,5 +186,29 @@ public class RatingService {
                 .collect(Collectors.toList());
 
         return ResponseEntity.status(HttpStatus.OK).body(bossRatingsDTOs);
+    }
+
+    public ResponseEntity<?> updateUserRating(UpdateRatingRequest ratingRequest) {
+
+        // Retrieve the rating
+        Rating rating = ratingRepository.findById(ratingRequest.getRatingId());
+        if (rating == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rating not found.");
+        }
+        User user = rating.getUser();
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("User not found for the rating.");
+        }
+
+        // Validate if the user trying to verify is the same user who created the rating
+        if (!user.getEmail().equals(ratingRequest.getUserEmail())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You cannot verify another user's rating.");
+        }
+        if(rating.getRating().equals(ratingRequest.getRatingValue())){
+            return ResponseEntity.status(HttpStatus.OK).body("Rating already set to "+ratingRequest.getRatingValue());
+        }
+        rating.setRating(ratingRequest.getRatingValue());
+        ratingRepository.save(rating);
+        return ResponseEntity.status(HttpStatus.OK).body("Rating Updated successfully");
     }
 }
