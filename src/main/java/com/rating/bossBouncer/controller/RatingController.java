@@ -32,7 +32,7 @@ public class RatingController {
     }
 
     @PostMapping("/updateRating")
-    public ResponseEntity<?> updateUserRatings(@RequestBody UpdateRatingRequest ratingRequest) {
+    public ResponseEntity<?> updateUserRatings(@Valid @RequestBody UpdateRatingRequest ratingRequest) {
         return ratingService.updateUserRating(ratingRequest);
 
     }
