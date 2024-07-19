@@ -1,6 +1,7 @@
 package com.rating.bossbouncer.controller;
 
 import com.rating.bossbouncer.bean.RatingRequest;
+import com.rating.bossbouncer.bean.UpdateRatingRequest;
 import com.rating.bossbouncer.service.RatingService;
 import jakarta.mail.MessagingException;
 import jakarta.validation.Valid;
@@ -30,6 +31,11 @@ public class RatingController {
 
     }
 
+    @PostMapping("/updateRating")
+    public ResponseEntity<?> updateUserRatings(@Valid @RequestBody UpdateRatingRequest ratingRequest) {
+        return ratingService.updateUserRating(ratingRequest);
+
+    }
 
     @GetMapping("/averageRatings")
     public ResponseEntity<?> getAverageBossRatingInCompany(@RequestParam("organization") String organization) {
