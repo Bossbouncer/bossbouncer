@@ -216,7 +216,7 @@ public class RatingService {
 
     private void handleExistingRating(Rating existingRating, User user) throws MessagingException {
         if (existingRating.getStatus() == RatingStatus.VERIFIED) {
-            throw new CustomConflictException("You have already rated this boss. Please check your dashboard.", null);
+            throw new CustomConflictException("You have already rated this boss. Please check your dashboard.", existingRating.getId());
         }
         if (existingRating.getStatus() == RatingStatus.PENDING) {
             otpService.generateOtp(user.getEmail());
