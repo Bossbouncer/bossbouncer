@@ -1,5 +1,6 @@
 package com.rating.bossbouncer.exceptions;
 
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -31,7 +32,8 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
                 errors.toString(),
-                request.getDescription(false).substring(4)
+                request.getDescription(false).substring(4),
+                null
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
@@ -44,10 +46,68 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "Internal Server Error",
                 ex.getMessage(),
-                request.getDescription(false).substring(4)
+                request.getDescription(false).substring(4),
+                null
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(CustomConflictException.class)
+    public ResponseEntity<ErrorResponse> handleConflictException(CustomConflictException ex, WebRequest request) {
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("ratingId", ex.getRatingId());
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                request.getDescription(false).substring(4),
+                data
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(EntityNotFoundException.class)  // Replace with your custom exception if needed
+    public ResponseEntity<ErrorResponse> handleNotFoundException(EntityNotFoundException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                ex.getMessage(),
+                request.getDescription(false).substring(4),
+                null
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
+    }
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage(),
+                request.getDescription(false).substring(4),
+                null
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(ForbiddenAccessException.class)
+    public ResponseEntity<ErrorResponse> handleForbiddenAccessException(ForbiddenAccessException ex, WebRequest request) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.FORBIDDEN.value(),
+                "Forbidden",
+                ex.getMessage(),
+                request.getDescription(false).substring(4),
+                null // Data field will be omitted if null
+        );
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
     }
 }
 

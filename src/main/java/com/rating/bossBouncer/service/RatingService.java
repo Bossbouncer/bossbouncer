@@ -4,6 +4,9 @@ import com.rating.bossbouncer.bean.*;
 import com.rating.bossbouncer.entity.Boss;
 import com.rating.bossbouncer.entity.Rating;
 import com.rating.bossbouncer.entity.User;
+import com.rating.bossbouncer.exceptions.BadRequestException;
+import com.rating.bossbouncer.exceptions.CustomConflictException;
+import com.rating.bossbouncer.exceptions.ForbiddenAccessException;
 import com.rating.bossbouncer.repository.BossRepository;
 import com.rating.bossbouncer.repository.RatingRepository;
 import com.rating.bossbouncer.repository.UserRepository;
@@ -16,13 +19,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 public class RatingService {
+
     @Autowired
     private RatingRepository ratingRepository;
     @Autowired
@@ -38,134 +45,95 @@ public class RatingService {
     @Autowired
     private EmailUtil emailUtil;
 
-    public ResponseEntity<String> submitRating(RatingRequest ratingrequest) throws MessagingException {
-        UserRequest userRequest= ratingrequest.getUser();
-        BossRequest bossRequest= ratingrequest.getBoss();
-        // Find or save the user
-        User existingUser = userRepository.findByEmail(userRequest.getEmail());
-        User user= new User();
-        if (existingUser == null) {
-            user.setFirstName(userRequest.getFirstName());
-            user.setLastName(userRequest.getLastName());
-            user.setEmail(userRequest.getEmail());
-            user.setIsVerified(false);
-            user.setCreatedBy(userRequest.getEmail());
-            user.setUpdatedBy(userRequest.getEmail());
-            userRepository.save(user);
-        } else {
-            user = existingUser;
-        }
+    public ResponseEntity<?> submitRating(RatingRequest ratingRequest) throws MessagingException {
+        User user = findOrCreateUser(ratingRequest.getUser());
+        Boss boss = findOrCreateBoss(ratingRequest.getBoss());
 
-        // Find or save the boss
-        Boss existingBoss = bossRepository.findByEmail(bossRequest.getEmail());
-        Boss boss= new Boss();
-        if (existingBoss == null) {
-            boss.setEmail(bossRequest.getEmail());
-            boss.setFirstName(bossRequest.getFirstName());
-            boss.setOrganization(bossRequest.getOrganization());
-            boss.setLastName(bossRequest.getLastName());
-            boss.setDepartment(bossRequest.getDepartment());
-            boss.setTitle(bossRequest.getTitle());
-            boss.setCreatedBy(user.getEmail());
-            boss.setUpdatedBy(user.getEmail());
-            bossRepository.save(boss);
-        } else {
-            boss = existingBoss;
-        }
-
-        // Check if the user has already rated this boss
         Rating existingRating = ratingRepository.findByUserAndBoss(user, boss);
-        if (existingRating != null && existingRating.getStatus() == RatingStatus.VERIFIED) {
-            return ResponseEntity.badRequest().body("You have already rated this boss. Please check your dashboard.");
-        }
-        if (existingRating != null && existingRating.getStatus() == RatingStatus.PENDING) {
-            otpService.generateOtp(user.getEmail());
-            return ResponseEntity.badRequest().body("You have already rated this boss. OTP sent please verify.Rating ID: " + existingRating.getId());
+        if (existingRating != null) {
+            handleExistingRating(existingRating, user);
         }
 
-        // Create a new rating
         Rating rating = new Rating();
         rating.setUser(user);
         rating.setBoss(boss);
-        rating.setRating(ratingrequest.getRating());
+        rating.setRating(ratingRequest.getRating());
         rating.setStatus(RatingStatus.PENDING);
         rating.setCreatedBy(user.getEmail());
         rating.setUpdatedBy(user.getEmail());
         ratingRepository.save(rating);
-        String otp=otpService.generateOtp(user.getEmail());
+
+        String otp = otpService.generateOtp(user.getEmail());
         emailUtil.sendOtpToConfirmRating(user, otp);
-        return ResponseEntity.ok("Rating submitted successfully.OTP sent for Verification. Rating ID: " + rating.getId());
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("ratingId", rating.getId());
+
+        ApiResponse<Map<String, Object>> response = new ApiResponse<>(
+                LocalDateTime.now(),
+                HttpStatus.OK.value(),
+                "Rating submitted successfully. OTP sent for verification.",
+                data
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     public ResponseEntity<?> verifyRating(Long ratingId, String email, String otp) {
-
-        // Validate the OTP
         if (!otpService.validateOtp(email, otp)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid OTP.");
+            throw new BadRequestException("Invalid OTP.");
         }
 
-        // Retrieve the rating
-        Rating rating = ratingRepository.findById(ratingId).orElse(null);
-        if (rating == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rating not found.");
-        }
+        Rating rating = ratingRepository.findById(ratingId).orElseThrow(() -> new BadRequestException("Rating not found."));
         User user = rating.getUser();
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("User not found for the rating.");
-        }
-
-        // Validate if the user trying to verify is the same user who created the rating
         if (!user.getEmail().equals(email)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You cannot verify another user's rating.");
+            throw new ForbiddenAccessException("You cannot verify another user's rating.");
         }
 
-        //Validate if rating already verified
-        if(rating.getStatus().equals(RatingStatus.VERIFIED)){
-            return ResponseEntity.status(HttpStatus.OK).body("Rating already verified.");
+        if (rating.getStatus() == RatingStatus.VERIFIED) {
+            return ResponseEntity.ok(new ApiResponse<>(
+                    LocalDateTime.now(),
+                    HttpStatus.OK.value(),
+                    "Rating already verified.",
+                    null
+            ));
         }
 
-        // Update the rating status to VERIFIED and save
         rating.setStatus(RatingStatus.VERIFIED);
         rating.getUser().setIsVerified(true);
         ratingRepository.save(rating);
 
         String accessToken = jwtService.generateToken(email);
-        return ResponseEntity.ok(new JwtResponse(accessToken,"Rating Verified."));
-        //return ResponseEntity.status(HttpStatus.OK).body("Rating Verified.");
+        return ResponseEntity.ok(new JwtResponse(accessToken, "Rating Verified."));
     }
 
     public ResponseEntity<?> getUserRatings(String email) {
-        // Retrieve the user by email
-        User user = userRepository.findByEmail(email);
+        User user = Optional.ofNullable(userRepository.findByEmail(email))
+                .orElseThrow(() -> new BadRequestException("User not found."));
 
-        // Check if the user exists
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found.");
-        }
         if (!user.getIsVerified()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not verified.");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User not verified.");
         }
 
-        // Retrieve verified ratings by user
         List<Rating> ratings = ratingRepository.findByUserAndStatus(user, RatingStatus.VERIFIED);
-
-        return ResponseEntity.status(HttpStatus.OK).body(ratings);
+        return ResponseEntity.ok(ratings);
     }
 
     public ResponseEntity<?> getAverageBossRatingInCompany(String organization) {
         List<Boss> bosses = bossRepository.findByOrganization(organization);
-        if(bosses.isEmpty()){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No Organization found with the given name: "+organization);
+        if (bosses.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No organization found with the given name: " + organization);
         }
+
         List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
-        List<BossAverageRating> averageBossrating= ratingRepository.getAverageRatingByBossIdIn(bossIds);
-        return ResponseEntity.status(HttpStatus.OK).body(averageBossrating);
+        List<BossAverageRating> averageBossRatings = ratingRepository.getAverageRatingByBossIdIn(bossIds);
+        return ResponseEntity.ok(averageBossRatings);
     }
 
     public ResponseEntity<?> getAllBossRatingsInCompany(String organization) {
         List<Boss> bosses = bossRepository.findByOrganization(organization);
         if (bosses.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No organization found with the given name: " + organization);
+            throw new BadRequestException("No organization found with the given name: " + organization);
         }
 
         List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
@@ -185,30 +153,74 @@ public class RatingService {
                 ))
                 .collect(Collectors.toList());
 
-        return ResponseEntity.status(HttpStatus.OK).body(bossRatingsDTOs);
+        return ResponseEntity.ok(bossRatingsDTOs);
     }
 
-    public ResponseEntity<?> updateUserRating(UpdateRatingRequest ratingRequest) {
+    public ResponseEntity<ApiResponse<Void>> updateUserRating(UpdateRatingRequest ratingRequest) {
+        Rating rating = Optional.ofNullable(ratingRepository.findById(ratingRequest.getRatingId()))
+                .orElseThrow(() -> new BadRequestException("Rating not found."));
 
-        // Retrieve the rating
-        Rating rating = ratingRepository.findById(ratingRequest.getRatingId());
-        if (rating == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Rating not found.");
-        }
         User user = rating.getUser();
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("User not found for the rating.");
+        if (!user.getEmail().equals(ratingRequest.getUserEmail())) {
+            throw new ForbiddenAccessException("You cannot update another user's rating.");
         }
 
-        // Validate if the user trying to verify is the same user who created the rating
-        if (!user.getEmail().equals(ratingRequest.getUserEmail())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You cannot verify another user's rating.");
+        if (rating.getRating().equals(ratingRequest.getRatingValue())) {
+            return ResponseEntity.ok(new ApiResponse<>(
+                    LocalDateTime.now(),
+                    HttpStatus.CONFLICT.value(),
+                    "Rating already set to " + ratingRequest.getRatingValue(),
+                    null
+            ));
         }
-        if(rating.getRating().equals(ratingRequest.getRatingValue())){
-            return ResponseEntity.status(HttpStatus.OK).body("Rating already set to "+ratingRequest.getRatingValue());
-        }
+
         rating.setRating(ratingRequest.getRatingValue());
         ratingRepository.save(rating);
-        return ResponseEntity.status(HttpStatus.OK).body("Rating Updated successfully");
+        return ResponseEntity.ok(new ApiResponse<>(
+                LocalDateTime.now(),
+                HttpStatus.OK.value(),
+                "Rating updated successfully.",
+                null
+        ));
+    }
+
+    private User findOrCreateUser(UserRequest userRequest) {
+        return Optional.ofNullable(userRepository.findByEmail(userRequest.getEmail()))
+                .orElseGet(() -> {
+                    User newUser = new User();
+                    newUser.setFirstName(userRequest.getFirstName());
+                    newUser.setLastName(userRequest.getLastName());
+                    newUser.setEmail(userRequest.getEmail());
+                    newUser.setIsVerified(false);
+                    newUser.setCreatedBy(userRequest.getEmail());
+                    newUser.setUpdatedBy(userRequest.getEmail());
+                    return userRepository.save(newUser);
+                });
+    }
+
+    private Boss findOrCreateBoss(BossRequest bossRequest) {
+        return Optional.ofNullable(bossRepository.findByEmail(bossRequest.getEmail()))
+                .orElseGet(() -> {
+                    Boss newBoss = new Boss();
+                    newBoss.setEmail(bossRequest.getEmail());
+                    newBoss.setFirstName(bossRequest.getFirstName());
+                    newBoss.setOrganization(bossRequest.getOrganization());
+                    newBoss.setLastName(bossRequest.getLastName());
+                    newBoss.setDepartment(bossRequest.getDepartment());
+                    newBoss.setTitle(bossRequest.getTitle());
+                    newBoss.setCreatedBy(bossRequest.getEmail());
+                    newBoss.setUpdatedBy(bossRequest.getEmail());
+                    return bossRepository.save(newBoss);
+                });
+    }
+
+    private void handleExistingRating(Rating existingRating, User user) throws MessagingException {
+        if (existingRating.getStatus() == RatingStatus.VERIFIED) {
+            throw new CustomConflictException("You have already rated this boss. Please check your dashboard.", existingRating.getId());
+        }
+        if (existingRating.getStatus() == RatingStatus.PENDING) {
+            otpService.generateOtp(user.getEmail());
+            throw new CustomConflictException("You have already rated this boss. OTP sent, please verify.", existingRating.getId());
+        }
     }
 }
