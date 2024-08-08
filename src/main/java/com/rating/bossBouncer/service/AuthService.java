@@ -2,11 +2,11 @@ package com.rating.bossbouncer.service;
 
 import com.rating.bossbouncer.bean.JwtResponse;
 import com.rating.bossbouncer.entity.User;
+import com.rating.bossbouncer.exceptions.BadRequestException;
 import com.rating.bossbouncer.repository.UserRepository;
 import com.rating.bossbouncer.utility.EmailUtil;
 import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -43,7 +43,7 @@ public class AuthService {
             String token = jwtService.generateToken(email);
             return ResponseEntity.ok(new JwtResponse(token,"OTP verified successfully!"));
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid OTP.");
+            throw new BadRequestException("Invalid OTP.");
         }
     }
 }
