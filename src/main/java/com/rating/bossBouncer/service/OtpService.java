@@ -34,8 +34,8 @@ public class OtpService {
         OtpEntry otpEntry = new OtpEntry(otp, System.currentTimeMillis());
         otpCache.put(email, otpEntry);
 
-        // Schedule removal of the OTP after 6 minutes
-        scheduler.schedule(() -> otpCache.remove(email), 6, TimeUnit.MINUTES);
+        // Schedule removal of the OTP after 30 minutes
+        scheduler.schedule(() -> otpCache.remove(email), 30, TimeUnit.MINUTES);
 
         System.out.println("OTP: " + otp);
         return otp;
