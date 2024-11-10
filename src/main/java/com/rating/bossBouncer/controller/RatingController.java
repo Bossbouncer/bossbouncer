@@ -37,13 +37,4 @@ public class RatingController {
 
     }
 
-    @GetMapping("/averageRatings")
-    public ResponseEntity<?> getAverageBossRatingInCompany(@RequestParam("organization") String organization) {
-        return ratingService.getAverageBossRatingInCompany(organization);
-    }
-
-    @GetMapping("/allRatings")
-    public ResponseEntity<?> getAllBossRatingsInCompany(@RequestParam("organization") String organization) {
-        return ratingService.getAllBossRatingsInCompany(organization);
-    }
 }
