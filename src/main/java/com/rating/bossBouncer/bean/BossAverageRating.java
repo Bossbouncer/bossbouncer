@@ -1,6 +1,11 @@
 package com.rating.bossbouncer.bean;
 
 public interface BossAverageRating {
-    Long getBossId();
-    double getAverageRatingPercentage();
+    String getFirstName();
+    String getLastName();
+    String getDepartment();
+    double getWeightedAverageRating();
+    int getUpCount();
+    int getDownCount();
+    int getNeutralCount();
 }

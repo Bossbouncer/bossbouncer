@@ -20,12 +20,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class RatingService {
@@ -117,43 +115,6 @@ public class RatingService {
 
         List<Rating> ratings = ratingRepository.findByUserAndStatus(user, RatingStatus.VERIFIED);
         return ResponseEntity.ok(ratings);
-    }
-
-    public ResponseEntity<?> getAverageBossRatingInCompany(String organization) {
-        List<Boss> bosses = bossRepository.findByOrganization(organization);
-        if (bosses.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No organization found with the given name: " + organization);
-        }
-
-        List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
-        List<BossAverageRating> averageBossRatings = ratingRepository.getAverageRatingByBossIdIn(bossIds);
-        return ResponseEntity.ok(averageBossRatings);
-    }
-
-    public ResponseEntity<?> getAllBossRatingsInCompany(String organization) {
-        List<Boss> bosses = bossRepository.findByOrganization(organization);
-        if (bosses.isEmpty()) {
-            throw new BadRequestException("No organization found with the given name: " + organization);
-        }
-
-        List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
-        List<Rating> ratings = ratingRepository.findByBossIdIn(bossIds);
-
-        Map<Long, List<String>> bossRatingsMap = ratings.stream()
-                .collect(Collectors.groupingBy(
-                        rating -> rating.getBoss().getId(),
-                        Collectors.mapping(rating -> rating.getRating().name(), Collectors.toList())
-                ));
-
-        List<BossRatingsDTO> bossRatingsDTOs = bosses.stream()
-                .map(boss -> new BossRatingsDTO(
-                        boss.getId(),
-                        boss.getFirstName(),
-                        bossRatingsMap.getOrDefault(boss.getId(), Collections.emptyList())
-                ))
-                .collect(Collectors.toList());
-
-        return ResponseEntity.ok(bossRatingsDTOs);
     }
 
     public ResponseEntity<ApiResponse<Void>> updateUserRating(UpdateRatingRequest ratingRequest) {
