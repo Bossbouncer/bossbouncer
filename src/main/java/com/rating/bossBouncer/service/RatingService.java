@@ -5,7 +5,6 @@ import com.rating.bossbouncer.entity.Boss;
 import com.rating.bossbouncer.entity.Rating;
 import com.rating.bossbouncer.entity.User;
 import com.rating.bossbouncer.exceptions.BadRequestException;
-import com.rating.bossbouncer.exceptions.CustomConflictException;
 import com.rating.bossbouncer.exceptions.ForbiddenAccessException;
 import com.rating.bossbouncer.repository.BossRepository;
 import com.rating.bossbouncer.repository.RatingRepository;
@@ -47,10 +46,10 @@ public class RatingService {
         User user = findOrCreateUser(ratingRequest.getUser());
         Boss boss = findOrCreateBoss(ratingRequest.getBoss());
 
-        Rating existingRating = ratingRepository.findByUserAndBoss(user, boss);
+/*        Rating existingRating = ratingRepository.findByUserAndBoss(user, boss);
         if (existingRating != null) {
             handleExistingRating(existingRating, user);
-        }
+        }*/
 
         Rating rating = new Rating();
         rating.setUser(user);
@@ -113,7 +112,7 @@ public class RatingService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User not verified.");
         }
 
-        List<Rating> ratings = ratingRepository.findByUserAndStatus(user, RatingStatus.VERIFIED);
+        List<Rating> ratings = ratingRepository.findLatestRatingsByUserAndStatus(user, RatingStatus.VERIFIED);
         return ResponseEntity.ok(ratings);
     }
 
@@ -175,7 +174,7 @@ public class RatingService {
                 });
     }
 
-    private void handleExistingRating(Rating existingRating, User user) throws MessagingException {
+/*    private void handleExistingRating(Rating existingRating, User user) throws MessagingException {
         if (existingRating.getStatus() == RatingStatus.VERIFIED) {
             throw new CustomConflictException("You have already rated this boss. Please check your dashboard.", existingRating.getId());
         }
@@ -183,5 +182,5 @@ public class RatingService {
             otpService.generateOtp(user.getEmail());
             throw new CustomConflictException("You have already rated this boss. OTP sent, please verify.", existingRating.getId());
         }
-    }
+    }*/
 }

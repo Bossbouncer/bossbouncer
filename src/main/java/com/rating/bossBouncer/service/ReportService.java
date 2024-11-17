@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,14 +21,15 @@ public class ReportService {
     @Autowired
     private BossRepository bossRepository;
 
-    public ResponseEntity<?> ratingSummary(String organization) {
+    public ResponseEntity<?> ratingSummaryForInterval(String organization, LocalDateTime startDate, LocalDateTime endDate) {
         List<Boss> bosses = bossRepository.findByOrganization(organization);
         if (bosses.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No organization found with the given name: " + organization);
         }
 
         List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
-        List<BossAverageRating> averageBossRatings = ratingRepository.getAverageRatingByBossIdIn(bossIds);
+        List<BossAverageRating> averageBossRatings = ratingRepository.getAverageRatingByBossIdInAndInterval(bossIds, startDate, endDate);
         return ResponseEntity.ok(averageBossRatings);
     }
+
 }
