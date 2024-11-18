@@ -134,8 +134,18 @@ public class RatingService {
             ));
         }
 
-        rating.setRating(ratingRequest.getRatingValue());
-        ratingRepository.save(rating);
+// Create a new Rating entry with the updated rating value
+        Rating newRating = new Rating();
+        newRating.setUser(user); // Set the user for the new rating
+        newRating.setBoss(rating.getBoss()); // Set the same boss for the new rating (this keeps the relationship intact)
+        newRating.setRating(ratingRequest.getRatingValue()); // Set the new rating value
+        newRating.setUpdatedAt(LocalDateTime.now()); // set a timestamp for when this update was made
+        newRating.setStatus(RatingStatus.VERIFIED);
+        newRating.setUpdatedBy(user.getEmail());
+        newRating.setCreatedBy(user.getEmail());
+
+        // Save the new rating entry in the database
+        ratingRepository.save(newRating);
         return ResponseEntity.ok(new ApiResponse<>(
                 LocalDateTime.now(),
                 HttpStatus.OK.value(),
