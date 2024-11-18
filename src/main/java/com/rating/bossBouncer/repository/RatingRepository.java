@@ -49,8 +49,8 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
 
     List<Rating> findByUser(User user);
 
-    @Query("SELECT r FROM Rating r WHERE r.user = :user AND r.status = :status AND r.createdAt IN (" +
-            "SELECT MAX(r2.createdAt) FROM Rating r2 WHERE r2.user = :user AND r2.status = :status GROUP BY r2.boss)")
+    @Query("SELECT r FROM Rating r WHERE r.user = :user AND r.status = :status AND r.updatedAt IN (" +
+            "SELECT MAX(r2.updatedAt) FROM Rating r2 WHERE r2.user = :user AND r2.status = :status GROUP BY r2.boss)")
     List<Rating> findLatestRatingsByUserAndStatus(User user, RatingStatus status);
 
     Rating findById(String ratingId);
