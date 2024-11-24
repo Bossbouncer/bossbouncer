@@ -10,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -31,14 +32,26 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
             "GROUP_CONCAT(r.rating) AS allRatings " +
             "FROM Rating r " +
             "WHERE r.boss.id IN :bossIds " +
+            "AND r.id IN (SELECT MAX(r2.id) " +
+            "             FROM Rating r2 " +
+            "             WHERE r2.boss.id = r.boss.id " +
+            "             AND r2.user.id = r.user.id " +
+            "             GROUP BY r2.user.id, r2.boss.id) " +
+            "AND r.createdAt BETWEEN :startDate AND :endDate " +
             "GROUP BY r.boss.id, r.boss.firstName, r.boss.lastName, r.boss.department")
-    List<BossAverageRating> getAverageRatingByBossIdIn(@Param("bossIds") List<Long> bossIds);
+    List<BossAverageRating> getAverageRatingByBossIdInAndInterval(
+            @Param("bossIds") List<Long> bossIds,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate);
+
 
     Rating findByUserAndBoss(User user, Boss boss);
 
     List<Rating> findByUser(User user);
 
-    List<Rating> findByUserAndStatus(User user, RatingStatus status);
+    @Query("SELECT r FROM Rating r WHERE r.user = :user AND r.status = :status AND r.updatedAt IN (" +
+            "SELECT MAX(r2.updatedAt) FROM Rating r2 WHERE r2.user = :user AND r2.status = :status GROUP BY r2.boss)")
+    List<Rating> findLatestRatingsByUserAndStatus(User user, RatingStatus status);
 
     Rating findById(String ratingId);
 }

@@ -1,7 +1,7 @@
 package com.rating.bossbouncer.config;
 
 import com.rating.bossbouncer.security.CustomUserDetailsService;
-import com.rating.bossbouncer.security.JwtRequestFilter;
+import com.rating.bossbouncer.filter.JwtRequestFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -79,7 +79,7 @@ public class SecurityConfig {
                         "/*/*.jpg",
                         "/*/*.html",
                         "/*/*.css",
-                        "/*/*.js","/api/ratings/submitRating","/api/ratings/verifyRating","/api/auth/requestLoginOtp","/api/auth/validateLoginOtp").permitAll()
+                        "/*/*.js","/api/ratings/submitRating","/api/ratings/verifyRating","/api/auth/requestLoginOtp","/api/auth/validateLoginOtp","/api/report/bosses/ratings-summary").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .authenticationManager(authenticationManager);

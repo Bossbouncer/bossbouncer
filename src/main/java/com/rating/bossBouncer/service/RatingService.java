@@ -5,7 +5,6 @@ import com.rating.bossbouncer.entity.Boss;
 import com.rating.bossbouncer.entity.Rating;
 import com.rating.bossbouncer.entity.User;
 import com.rating.bossbouncer.exceptions.BadRequestException;
-import com.rating.bossbouncer.exceptions.CustomConflictException;
 import com.rating.bossbouncer.exceptions.ForbiddenAccessException;
 import com.rating.bossbouncer.repository.BossRepository;
 import com.rating.bossbouncer.repository.RatingRepository;
@@ -47,10 +46,10 @@ public class RatingService {
         User user = findOrCreateUser(ratingRequest.getUser());
         Boss boss = findOrCreateBoss(ratingRequest.getBoss());
 
-        Rating existingRating = ratingRepository.findByUserAndBoss(user, boss);
+/*        Rating existingRating = ratingRepository.findByUserAndBoss(user, boss);
         if (existingRating != null) {
             handleExistingRating(existingRating, user);
-        }
+        }*/
 
         Rating rating = new Rating();
         rating.setUser(user);
@@ -113,7 +112,7 @@ public class RatingService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User not verified.");
         }
 
-        List<Rating> ratings = ratingRepository.findByUserAndStatus(user, RatingStatus.VERIFIED);
+        List<Rating> ratings = ratingRepository.findLatestRatingsByUserAndStatus(user, RatingStatus.VERIFIED);
         return ResponseEntity.ok(ratings);
     }
 
@@ -135,8 +134,18 @@ public class RatingService {
             ));
         }
 
-        rating.setRating(ratingRequest.getRatingValue());
-        ratingRepository.save(rating);
+// Create a new Rating entry with the updated rating value
+        Rating newRating = new Rating();
+        newRating.setUser(user); // Set the user for the new rating
+        newRating.setBoss(rating.getBoss()); // Set the same boss for the new rating (this keeps the relationship intact)
+        newRating.setRating(ratingRequest.getRatingValue()); // Set the new rating value
+        newRating.setUpdatedAt(LocalDateTime.now()); // set a timestamp for when this update was made
+        newRating.setStatus(RatingStatus.VERIFIED);
+        newRating.setUpdatedBy(user.getEmail());
+        newRating.setCreatedBy(user.getEmail());
+
+        // Save the new rating entry in the database
+        ratingRepository.save(newRating);
         return ResponseEntity.ok(new ApiResponse<>(
                 LocalDateTime.now(),
                 HttpStatus.OK.value(),
@@ -175,7 +184,7 @@ public class RatingService {
                 });
     }
 
-    private void handleExistingRating(Rating existingRating, User user) throws MessagingException {
+/*    private void handleExistingRating(Rating existingRating, User user) throws MessagingException {
         if (existingRating.getStatus() == RatingStatus.VERIFIED) {
             throw new CustomConflictException("You have already rated this boss. Please check your dashboard.", existingRating.getId());
         }
@@ -183,5 +192,5 @@ public class RatingService {
             otpService.generateOtp(user.getEmail());
             throw new CustomConflictException("You have already rated this boss. OTP sent, please verify.", existingRating.getId());
         }
-    }
+    }*/
 }

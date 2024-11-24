@@ -1,4 +1,4 @@
-package com.rating.bossbouncer.security;
+package com.rating.bossbouncer.filter;
 
 import com.rating.bossbouncer.service.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
