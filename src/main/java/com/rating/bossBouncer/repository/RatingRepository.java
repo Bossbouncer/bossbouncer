@@ -38,6 +38,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
             "             AND r2.user.id = r.user.id " +
             "             GROUP BY r2.user.id, r2.boss.id) " +
             "AND r.createdAt BETWEEN :startDate AND :endDate " +
+            "AND r.status = 'VERIFIED'" +
             "GROUP BY r.boss.id, r.boss.firstName, r.boss.lastName, r.boss.department")
     List<BossAverageRating> getAverageRatingByBossIdInAndInterval(
             @Param("bossIds") List<Long> bossIds,

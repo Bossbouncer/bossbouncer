@@ -1,6 +1,7 @@
 package com.rating.bossbouncer.service;
 
 import com.rating.bossbouncer.bean.BossAverageRating;
+import com.rating.bossbouncer.bean.BossSummary;
 import com.rating.bossbouncer.bean.RatingSplitResponse;
 import com.rating.bossbouncer.entity.Boss;
 import com.rating.bossbouncer.repository.BossRepository;
@@ -33,7 +34,7 @@ public class ReportService {
         List<BossAverageRating> averageBossRatings = ratingRepository.getAverageRatingByBossIdInAndInterval(bossIds, startDate, endDate);
 
         // Split the list into two categories based on total rating (sum of upCount, downCount, and neutralCount)
-        List<BossAverageRating> ratingsGreaterThanOrEqualTo2 = averageBossRatings.stream()
+        List<BossAverageRating> ratingsAboveTwo = averageBossRatings.stream()
                 .filter(rating -> {
                     // Calculate the total rating by summing up the counts
                     int totalRating = rating.getUpCount() + rating.getDownCount() + rating.getNeutralCount();
@@ -41,16 +42,24 @@ public class ReportService {
                 })
                 .collect(Collectors.toList());
 
-        List<BossAverageRating> ratingsLessThan2 = averageBossRatings.stream()
+        List<BossSummary> ratingsBelowTwo = averageBossRatings.stream()
                 .filter(rating -> {
                     // Calculate the total rating by summing up the counts
                     int totalRating = rating.getUpCount() + rating.getDownCount() + rating.getNeutralCount();
                     return totalRating < 2;  // Filter bosses with total rating < 2
                 })
+                .map(rating -> {
+                    // For each rating below 2, map it to the required boss info (firstName, lastName, department)
+                    return new BossSummary(
+                            rating.getFirstName(),
+                            rating.getLastName(),
+                            rating.getDepartment()
+                    );
+                })
                 .collect(Collectors.toList());
 
         // Return both lists in a custom response structure
-        return ResponseEntity.ok(new RatingSplitResponse(ratingsGreaterThanOrEqualTo2, ratingsLessThan2));
+        return ResponseEntity.ok(new RatingSplitResponse(ratingsAboveTwo, ratingsBelowTwo));
 
     }
 
