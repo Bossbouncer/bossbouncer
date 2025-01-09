@@ -1,3 +1,4 @@
+/*
 package com.rating.bossbouncer.filter;
 
 import jakarta.servlet.FilterChain;
@@ -39,3 +40,4 @@ public class ApiKeyFilter extends OncePerRequestFilter {
     }
 }
 
+*/
