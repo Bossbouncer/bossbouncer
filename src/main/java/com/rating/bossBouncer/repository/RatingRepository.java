@@ -20,7 +20,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     @Query("SELECT r.boss.id AS bossId, " +
             "r.boss.firstName AS firstName, " +
             "r.boss.lastName AS lastName, " +
-            "r.boss.department AS department, " +
+            "r.boss.title AS title, " +
             "AVG(CASE " +
             "WHEN r.rating = 'UP' THEN 1.0 " +
             "WHEN r.rating = 'DOWN' THEN -1.5 " +
@@ -39,7 +39,7 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
             "             GROUP BY r2.user.id, r2.boss.id) " +
             "AND r.createdAt BETWEEN :startDate AND :endDate " +
             "AND r.status = 'VERIFIED'" +
-            "GROUP BY r.boss.id, r.boss.firstName, r.boss.lastName, r.boss.department")
+            "GROUP BY r.boss.id, r.boss.firstName, r.boss.lastName, r.boss.title")
     List<BossAverageRating> getAverageRatingByBossIdInAndInterval(
             @Param("bossIds") List<Long> bossIds,
             @Param("startDate") LocalDateTime startDate,
