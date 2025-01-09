@@ -53,7 +53,7 @@ public class ReportService {
                     return new BossSummary(
                             rating.getFirstName(),
                             rating.getLastName(),
-                            rating.getDepartment()
+                            rating.getTitle()
                     );
                 })
                 .collect(Collectors.toList());

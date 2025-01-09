@@ -6,11 +6,11 @@ import lombok.Data;
 public class BossSummary {
     private String firstName;
     private String lastName;
-    private String department;
+    private String title;
 
-    public BossSummary(String firstName, String lastName, String department) {
+    public BossSummary(String firstName, String lastName, String title) {
         this.firstName = firstName;
         this.lastName = lastName;
-        this.department = department;
+        this.title = title;
     }
 }
