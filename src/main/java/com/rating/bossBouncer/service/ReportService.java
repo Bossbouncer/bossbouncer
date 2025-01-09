@@ -1,6 +1,8 @@
 package com.rating.bossbouncer.service;
 
 import com.rating.bossbouncer.bean.BossAverageRating;
+import com.rating.bossbouncer.bean.BossSummary;
+import com.rating.bossbouncer.bean.RatingSplitResponse;
 import com.rating.bossbouncer.entity.Boss;
 import com.rating.bossbouncer.repository.BossRepository;
 import com.rating.bossbouncer.repository.RatingRepository;
@@ -28,8 +30,37 @@ public class ReportService {
         }
 
         List<Long> bossIds = bosses.stream().map(Boss::getId).collect(Collectors.toList());
+        // Fetch the average ratings from the repository
         List<BossAverageRating> averageBossRatings = ratingRepository.getAverageRatingByBossIdInAndInterval(bossIds, startDate, endDate);
-        return ResponseEntity.ok(averageBossRatings);
+
+        // Split the list into two categories based on total rating (sum of upCount, downCount, and neutralCount)
+        List<BossAverageRating> ratingsAboveTwo = averageBossRatings.stream()
+                .filter(rating -> {
+                    // Calculate the total rating by summing up the counts
+                    int totalRating = rating.getUpCount() + rating.getDownCount() + rating.getNeutralCount();
+                    return totalRating >= 2;  // Filter bosses with total rating >= 2
+                })
+                .collect(Collectors.toList());
+
+        List<BossSummary> ratingsBelowTwo = averageBossRatings.stream()
+                .filter(rating -> {
+                    // Calculate the total rating by summing up the counts
+                    int totalRating = rating.getUpCount() + rating.getDownCount() + rating.getNeutralCount();
+                    return totalRating < 2;  // Filter bosses with total rating < 2
+                })
+                .map(rating -> {
+                    // For each rating below 2, map it to the required boss info (firstName, lastName, department)
+                    return new BossSummary(
+                            rating.getFirstName(),
+                            rating.getLastName(),
+                            rating.getTitle()
+                    );
+                })
+                .collect(Collectors.toList());
+
+        // Return both lists in a custom response structure
+        return ResponseEntity.ok(new RatingSplitResponse(ratingsAboveTwo, ratingsBelowTwo));
+
     }
 
 }
