@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class BossService {
@@ -14,27 +15,33 @@ public class BossService {
     @Autowired
     private BossRepository bossRepository;
 
-    public List<Boss> typeAheadSearch(String organization, String query, String field) {
-        Specification<Boss> spec = (root, query1, cb) ->
-                cb.equal(cb.lower(root.get("organization")), organization.toLowerCase());
+    public List<Boss> typeAheadSearch(String query, String field) {
+        if (query == null || query.isBlank()) {
+            return List.of(); // ✅ return empty list if query is empty
+        }
 
-        switch (field) {
-            case "firstName":
-                spec = spec.and((root, query1, cb) -> cb.like(cb.lower(root.get("firstName")), "%" + query.toLowerCase() + "%"));
-                break;
-            case "lastName":
-                spec = spec.and((root, query1, cb) -> cb.like(cb.lower(root.get("lastName")), "%" + query.toLowerCase() + "%"));
-                break;
-            case "email":
-                spec = spec.and((root, query1, cb) -> cb.like(cb.lower(root.get("email")), "%" + query.toLowerCase() + "%"));
-                break;
-            case "title":
-                spec = spec.and((root, query1, cb) -> cb.like(cb.lower(root.get("title")), "%" + query.toLowerCase() + "%"));
-                break;
-            default:
-                throw new IllegalArgumentException("Invalid field for search");
+        String normalizedQuery = query.trim().toLowerCase();
+        String searchTerm = "%" + normalizedQuery + "%";
+
+        Specification<Boss> spec = Specification.where(null); // start with empty spec
+
+        // ✅ Allowed searchable fields
+        Set<String> allowedFields = Set.of("firstName", "lastName", "email", "title");
+
+        if (field != null && !field.isBlank() && allowedFields.contains(field)) {
+            // ✅ Search only in the specific field
+            spec = spec.and((root, query1, cb) -> cb.like(cb.lower(root.get(field)), searchTerm));
+        } else {
+            // ✅ Search across all allowed fields (OR condition)
+            spec = spec.and((root, query1, cb) -> cb.or(
+                    cb.like(cb.lower(root.get("firstName")), searchTerm),
+                    cb.like(cb.lower(root.get("lastName")), searchTerm),
+                    cb.like(cb.lower(root.get("email")), searchTerm),
+                    cb.like(cb.lower(root.get("title")), searchTerm)
+            ));
         }
 
         return bossRepository.findAll(spec);
     }
+
 }
