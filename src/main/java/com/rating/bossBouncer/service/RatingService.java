@@ -154,6 +154,17 @@ public class RatingService {
         ));
     }
 
+    public List<RatingSummary> getVerifiedRatingsByBossEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return List.of();
+        }
+        return ratingRepository.findVerifiedRatingsByBossEmail(email.trim());
+    }
+
+    public long getTotalRatingsCount() {
+        return ratingRepository.countVerifiedRatings(); // or countAllRatings()
+    }
+
     private User findOrCreateUser(UserRequest userRequest) {
         return Optional.ofNullable(userRepository.findByEmail(userRequest.getEmail()))
                 .orElseGet(() -> {
