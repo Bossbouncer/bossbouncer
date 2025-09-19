@@ -1,6 +1,7 @@
 package com.rating.bossbouncer.repository;
 
 import com.rating.bossbouncer.bean.BossAverageRating;
+import com.rating.bossbouncer.bean.RatingSummary;
 import com.rating.bossbouncer.entity.Boss;
 import com.rating.bossbouncer.entity.Rating;
 import com.rating.bossbouncer.entity.User;
@@ -55,4 +56,19 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
     List<Rating> findLatestRatingsByUserAndStatus(User user, RatingStatus status);
 
     Rating findById(String ratingId);
+
+    @Query("""
+           SELECT r.rating AS rating, r.createdAt AS createdAt, r.updatedAt AS updatedAt
+           FROM Rating r 
+           JOIN r.boss b 
+           WHERE LOWER(b.email) = LOWER(:email)
+           AND r.status = 'VERIFIED'
+           """)
+    List<RatingSummary> findVerifiedRatingsByBossEmail(@Param("email") String email);
+
+    @Query("SELECT COUNT(r) FROM Rating r")
+    long countAllRatings();
+
+    @Query("SELECT COUNT(r) FROM Rating r WHERE r.status = 'VERIFIED'")
+    long countVerifiedRatings();
 }

@@ -79,7 +79,7 @@ public class SecurityConfig {
                         "/*/*.jpg",
                         "/*/*.html",
                         "/*/*.css",
-                        "/*/*.js","/api/ratings/submitRating","/api/ratings/verifyRating","/api/auth/requestLoginOtp","/api/auth/validateLoginOtp","/api/report/bosses/ratings-summary").permitAll()
+                        "/*/*.js","/api/ratings/submitRating","/api/ratings/verifyRating","/api/auth/requestLoginOtp","/api/auth/validateLoginOtp","/api/report/bosses/ratings-summary","/api/ratings/by-boss-email","/api/ratings/count").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .authenticationManager(authenticationManager);
