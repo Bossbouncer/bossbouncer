@@ -65,4 +65,10 @@ public interface RatingRepository extends JpaRepository<Rating, Long> {
            AND r.status = 'VERIFIED'
            """)
     List<RatingSummary> findVerifiedRatingsByBossEmail(@Param("email") String email);
+
+    @Query("SELECT COUNT(r) FROM Rating r")
+    long countAllRatings();
+
+    @Query("SELECT COUNT(r) FROM Rating r WHERE r.status = 'VERIFIED'")
+    long countVerifiedRatings();
 }

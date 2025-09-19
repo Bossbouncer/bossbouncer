@@ -54,4 +54,17 @@ public class RatingController {
         return ResponseEntity.ok(ratings);
     }
 
+    /**
+     * GET /ratings/count - Returns the total number of ratings in the system.
+     * <p>
+     * By default, only counts verified ratings.
+     *
+     * @return the total count of ratings
+     */
+    @GetMapping("/count")
+    public ResponseEntity<Long> getTotalRatingsCount() {
+        long count = ratingService.getTotalRatingsCount();
+        return ResponseEntity.ok(count);
+    }
+
 }
