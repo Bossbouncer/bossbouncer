@@ -1,6 +1,7 @@
 package com.rating.bossbouncer.controller;
 
 import com.rating.bossbouncer.bean.RatingRequest;
+import com.rating.bossbouncer.bean.RatingSummary;
 import com.rating.bossbouncer.bean.UpdateRatingRequest;
 import com.rating.bossbouncer.service.RatingService;
 import jakarta.mail.MessagingException;
@@ -8,6 +9,8 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/ratings/")
@@ -35,6 +38,20 @@ public class RatingController {
     public ResponseEntity<?> updateUserRatings(@Valid @RequestBody UpdateRatingRequest ratingRequest) {
         return ratingService.updateUserRating(ratingRequest);
 
+    }
+
+    /**
+     * GET /ratings/by-boss-email - Fetch verified ratings for a boss by email.
+     * <p>
+     * Returns only rating, createdAt, and updatedAt fields for all verified ratings.
+     *
+     * @param email boss email (case-insensitive)
+     * @return list of verified rating summaries
+     */
+    @GetMapping("/by-boss-email")
+    public ResponseEntity<List<RatingSummary>> getVerifiedRatingsByBossEmail(@RequestParam String email) {
+        List<RatingSummary> ratings = ratingService.getVerifiedRatingsByBossEmail(email);
+        return ResponseEntity.ok(ratings);
     }
 
 }
